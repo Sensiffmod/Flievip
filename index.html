@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TRUMSENSI ULTIMATE - SYSTEM BY HUY</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap');
+        :root { --neon: #00d2ff; --bg: #010409; }
+        body { background: var(--bg); color: white; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; margin: 0; }
+        .font-cyber { font-family: 'Orbitron', sans-serif; }
+        .glass { background: rgba(13, 17, 23, 0.95); backdrop-filter: blur(25px); border: 1px solid rgba(0, 210, 255, 0.15); }
+        .popup { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 10000; display: none; align-items: center; justify-content: center; opacity: 0; transition: 0.4s; }
+        .popup.active { display: flex; opacity: 1; }
+        .sidebar { position: fixed; top: 0; left: -320px; width: 300px; height: 100%; background: #0d1117; z-index: 10001; transition: 0.5s cubic-bezier(0.8, 0, 0.2, 1); border-right: 2px solid var(--neon); }
+        .sidebar.active { left: 0; }
+        .nav-item { display: flex; align-items: center; gap: 15px; padding: 18px 25px; border-bottom: 1px solid rgba(255,255,255,0.03); cursor: pointer; transition: 0.3s; }
+        .nav-item:hover { background: rgba(0, 210, 255, 0.1); color: var(--neon); }
+        #matrix { position: fixed; inset: 0; z-index: -1; opacity: 0.12; }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+
+    <div id="auth-gate" class="popup active">
+        <div class="glass w-[92%] max-w-[400px] p-10 rounded-[3rem] border-t-4 border-blue-500">
+            <div id="auth-content">
+                <h2 class="font-cyber text-3xl text-center mb-2 italic text-blue-400 font-black tracking-widest">SIGN IN</h2>
+                <p class="text-[8px] text-center text-gray-500 mb-8 uppercase tracking-[5px]">Secure Access System</p>
+                <div class="space-y-5">
+                    <input type="text" id="u-name" placeholder="Tài khoản..." class="w-full bg-black/50 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 font-bold">
+                    <input type="password" id="u-pass" placeholder="Mật khẩu..." class="w-full bg-black/50 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-500 font-bold">
+                    <button onclick="loginSystem()" class="w-full bg-blue-600 py-5 rounded-2xl font-black text-xs tracking-widest">VÀO HỆ THỐNG</button>
+                    <p class="text-center text-[10px] text-gray-500">Chưa có tài khoản? <span onclick="showRegister()" class="text-blue-400 cursor-pointer font-bold underline">Đăng ký nhanh</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-sidebar" class="sidebar">
+        <div class="relative p-10 border-b border-white/5 text-center">
+            <button onclick="toggleSide()" class="absolute top-5 right-5 text-gray-500 hover:text-red-500 text-xl transition-all">
+                <i class="fas fa-times-circle"></i>
+            </button>
+            <div class="w-20 h-20 bg-blue-600 rounded-3xl mx-auto mb-4 flex items-center justify-center text-4xl font-black shadow-lg">T</div>
+            <p id="display-user" class="font-cyber text-blue-400 text-sm font-black italic">USER_PLAYER</p>
+            <p id="role-display" class="text-[8px] text-gray-500 font-black uppercase mt-1">Cấp độ: Member</p>
+        </div>
+        <div class="py-2">
+            <div onclick="openPop('pop-qr')" class="nav-item"><i class="fas fa-wallet text-blue-400 w-5"></i> Nạp Ví (QR)</div>
+            <div onclick="alert('Đang bảo trì!')" class="nav-item"><i class="fas fa-receipt text-yellow-500 w-5"></i> Đổi Thẻ Cào</div>
+            <div id="admin-btn" onclick="openPop('pop-admin')" class="nav-item hidden text-red-500 font-black"><i class="fas fa-user-shield w-5"></i> QUẢN TRỊ VIÊN</div>
+            <div onclick="window.location.reload()" class="nav-item text-gray-400"><i class="fas fa-sign-out-alt w-5"></i> Đăng Xuất</div>
+        </div>
+    </div>
+
+    <div id="app-ui" class="hidden h-screen flex flex-col">
+        <header class="p-5 flex items-center justify-between glass border-b border-blue-500/10">
+            <div onclick="toggleSide()" class="text-2xl text-blue-400 cursor-pointer"><i class="fas fa-bars-staggered"></i></div>
+            <div class="text-center">
+                <h1 class="text-xl font-black font-cyber text-blue-400 italic">TRUMSENSI</h1>
+            </div>
+            <div class="bg-blue-600/10 px-4 py-2 rounded-2xl border border-blue-500/20">
+                <p id="user-bal" class="text-sm font-black text-yellow-500 font-cyber">0đ</p>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-5 space-y-6 pb-28">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="glass p-5 rounded-[2rem] border-l-4 border-green-500">
+                    <p class="text-[8px] text-gray-500 font-black uppercase tracking-widest italic">Server Status</p>
+                    <p class="text-green-500 font-cyber text-[10px] font-black animate-pulse">● STABLE ONLINE</p>
+                </div>
+                <div class="glass p-5 rounded-[2rem] border-l-4 border-blue-500">
+                    <p class="text-[8px] text-gray-500 font-black uppercase tracking-widest italic">Live Users</p>
+                    <p id="live-count" class="font-cyber text-lg text-blue-400 font-black">1,402</p>
+                </div>
+            </div>
+
+            <div class="glass p-6 rounded-[2.5rem]">
+                <p class="text-[9px] font-black text-blue-400 uppercase italic mb-4 tracking-widest">Biểu đồ hệ thống (LIVE)</p>
+                <canvas id="main-chart" height="140"></canvas>
+            </div>
+
+            <div class="flex bg-black/40 p-1.5 rounded-2xl border border-white/5">
+                <button onclick="setTab('free')" id="b-free" class="flex-1 py-3 text-[9px] font-black opacity-40">FREE</button>
+                <button onclick="setTab('adr')" id="b-adr" class="flex-1 py-3 text-[9px] font-black opacity-40">ANDROID</button>
+                <button onclick="setTab('ios')" id="b-ios" class="flex-1 py-3 text-[9px] font-black opacity-40">IOS VIP</button>
+            </div>
+            <div id="file-box" class="space-y-4"></div>
+        </main>
+    </div>
+
+    <div id="pop-qr" class="popup">
+        <div class="glass w-[85%] max-w-[380px] p-8 rounded-[3rem] text-center relative">
+            <button onclick="closePop('pop-qr')" class="absolute top-6 right-6 text-gray-500"><i class="fas fa-times"></i></button>
+            <h3 class="font-cyber text-blue-400 mb-6 font-black italic">QUÉT MÃ NẠP TIỀN</h3>
+            <img src="https://img.vietqr.io/image/MB-0397208110-compact2.jpg?amount=50000&addInfo=NAP%20TIEN%20HUY" class="w-full rounded-2xl mb-4">
+            <div class="bg-black/40 p-4 rounded-xl text-[10px] text-left border border-white/5">
+                <p>Nội dung: <span class="text-blue-400 font-bold">NAP TIEN HUY</span></p>
+                <p>Chủ TK: <span class="text-white font-bold tracking-widest">NGUYEN QUOC HUY</span></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="pop-admin" class="popup">
+        <div class="glass w-[90%] p-8 rounded-[3rem]">
+            <h3 class="text-red-500 font-black italic font-cyber mb-4 tracking-widest">ADMIN PANEL</h3>
+            <div id="code-list" class="h-64 overflow-y-auto bg-black p-4 rounded-2xl font-mono text-[9px] text-blue-400 space-y-2 border border-white/5"></div>
+            <button onclick="closePop('pop-admin')" class="w-full bg-red-600 py-4 mt-6 rounded-2xl font-black text-xs uppercase">Thoát</button>
+        </div>
+    </div>
+
+    <div id="audio-bg"></div>
+
+    <script>
+        let balance = 0;
+        let tab = 'free';
+        const giftcodes = {};
+
+        // Logic tạo hàng trăm mã nạp ngầm (Enterprise Logic)
+        [10, 20, 50, 100, 500].forEach(v => {
+            for(let i=0; i<80; i++) {
+                let c = `HUY_${v}K_` + Math.random().toString(36).substring(6).toUpperCase();
+                giftcodes[c] = { val: v*1000, used: false };
+            }
+        });
+
+        function showRegister() {
+            document.getElementById('auth-content').innerHTML = `
+                <h2 class="font-cyber text-3xl text-center mb-2 italic text-green-400 font-black tracking-widest">SIGN UP</h2>
+                <div class="space-y-5">
+                    <input type="text" placeholder="Tên tài khoản..." class="w-full bg-black/50 border border-white/10 p-4 rounded-2xl outline-none focus:border-green-500 font-bold">
+                    <input type="password" placeholder="Mật khẩu..." class="w-full bg-black/50 border border-white/10 p-4 rounded-2xl outline-none focus:border-green-500 font-bold">
+                    <button onclick="alert('Đăng ký thành công!'); window.location.reload()" class="w-full bg-green-600 py-5 rounded-2xl font-black text-xs tracking-widest">TẠO TÀI KHOẢN</button>
+                </div>`;
+        }
+
+        function loginSystem() {
+            const u = document.getElementById('u-name').value;
+            const p = document.getElementById('u-pass').value;
+            if(!u || !p) return alert("Vui lòng nhập tài khoản!");
+            
+            document.getElementById('audio-bg').innerHTML = `<iframe src="https://www.youtube.com/embed/FlU6ZEwUHz8?autoplay=1&loop=1&playlist=FlU6ZEwUHz8" width="0" height="0"></iframe>`;
+            document.getElementById('auth-gate').classList.remove('active');
+            document.getElementById('app-ui').classList.remove('hidden');
+            document.getElementById('display-user').innerText = u.toUpperCase();
+            
+            if(u.toLowerCase()==='admin' && p==='Huy2026@') {
+                document.getElementById('admin-btn').classList.remove('hidden');
+                document.getElementById('role-display').innerText = "Cấp độ: VUA ADMIN";
+            }
+            start();
+        }
+
+        function toggleSide() { document.getElementById('main-sidebar').classList.toggle('active'); }
+        function openPop(id) { document.getElementById(id).classList.add('active'); if(id!=='pop-admin') toggleSide(); }
+        function closePop(id) { document.getElementById(id).classList.remove('active'); }
+
+        function setTab(t) {
+            tab = t;
+            ['free', 'adr', 'ios'].forEach(i => {
+                const b = document.getElementById('b-'+i);
+                b.style.opacity = (i===t)?"1":"0.4";
+                b.style.color = (i===t)?"#00d2ff":"white";
+                b.style.borderBottom = (i===t)?"2px solid #00d2ff":"none";
+            });
+            render();
+        }
+
+        function render() {
+            const box = document.getElementById('file-box');
+            box.innerHTML = "";
+            let data = [];
+            
+            if(tab === 'free') {
+                data = [
+                    {n: "NETPLUS FAKE LAG V8", p: 0},
+                    {n: "HOPPER FAKE LAG V10", p: 0},
+                    {n: "ITACHIPING FAKE LAG V10", p: 0}
+                ];
+            } else if(tab === 'adr') {
+                data = Array.from({length:12}, (_, i) => ({n: `ANDROID VIP AIM V${i+1}`, p: (i+1)*30000}));
+            } else {
+                data = Array.from({length:12}, (_, i) => ({n: `IOS SUPER MOD V${i+1}`, p: (i+1)*70000}));
+            }
+
+            data.forEach(item => {
+                box.innerHTML += `
+                <div class="glass p-6 rounded-[2.5rem] flex justify-between items-center active:scale-95 transition-all">
+                    <div>
+                        <p class="text-[10px] font-black uppercase italic tracking-wider">${item.n}</p>
+                        <p class="text-blue-400 font-cyber text-[11px]">${item.p===0?'MIỄN PHÍ':item.p.toLocaleString()+'đ'}</p>
+                    </div>
+                    <button onclick="buyFile(${item.p})" class="bg-blue-600 px-6 py-3 rounded-2xl text-[9px] font-black uppercase shadow-lg shadow-blue-500/20 tracking-tighter">Lấy File</button>
+                </div>`;
+            });
+        }
+
+        function buyFile(p) {
+            if(balance >= p) {
+                balance -= p; updateUI(); 
+                alert("MUA THÀNH CÔNG! ĐANG TRẢ FILE...");
+                window.open("https://link4m.com/AxI17", "_blank");
+            } else {
+                alert("SỐ DƯ KHÔNG ĐỦ!"); openPop('pop-qr');
+            }
+        }
+
+        function updateUI() { document.getElementById('user-bal').innerText = balance.toLocaleString() + "đ"; }
+
+        function start() {
+            setTab('free');
+            const ctx = document.getElementById('main-chart').getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: [1,2,3,4,5,6], datasets: [{ data: [20, 50, 30, 80, 40, 100], borderColor: '#00d2ff', backgroundColor: 'rgba(0, 210, 255, 0.1)', fill: true, tension: 0.4, pointRadius: 0 }] },
+                options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+            });
+            setInterval(() => {
+                document.getElementById('live-count').innerText = (1000 + Math.floor(Math.random()*600)).toLocaleString();
+                chart.data.datasets[0].data.shift(); chart.data.datasets[0].data.push(Math.floor(Math.random()*100));
+                chart.update();
+            }, 3000);
+            document.getElementById('code-list').innerHTML = Object.keys(giftcodes).slice(0,100).map(k => `<div class="flex justify-between border-b border-white/5 pb-1"><span>${k}</span> <span>${giftcodes[k].val/1000}K</span></div>`).join('');
+        }
+
+        const canv = document.getElementById("matrix"), mctx = canv.getContext("2d");
+        canv.width = window.innerWidth; canv.height = window.innerHeight;
+        const drops = Array(Math.floor(canv.width/20)).fill(1);
+        setInterval(() => {
+            mctx.fillStyle = "rgba(1, 4, 9, 0.1)"; mctx.fillRect(0,0,canv.width,canv.height);
+            mctx.fillStyle = "#00d2ff"; mctx.font = "15px monospace";
+            drops.forEach((y, i) => {
+                mctx.fillText(Math.floor(Math.random()*2), i*20, y*20);
+                if(y*20 > canv.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            });
+        }, 50);
+    </script>
+</body>
+</html>
